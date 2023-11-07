@@ -330,7 +330,6 @@ class AlphaComplex(Complejo_Simplicial):
 
     def representaAlfaComplejo(self):
         for valor in self.PesosOrdenados():
-            print(valor)
             self.representaSubnivel(valor)
 
 
