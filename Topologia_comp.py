@@ -328,6 +328,7 @@ class AlphaComplex(Complejo_Simplicial):
         plt.plot(self.points[:,0], self.points[:,1], 'ko')
         plt.show()
 
+    #Representa todo el todos los subcomplejos del alfa-complejo
     def representaAlfaComplejo(self):
         for valor in self.PesosOrdenados():
             self.representaSubnivel(valor)
