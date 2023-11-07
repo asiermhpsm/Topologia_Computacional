@@ -302,7 +302,6 @@ class AlphaComplex(Complejo_Simplicial):
                 for vertice in vertices:
                     if vertice[0] != arista[0] and vertice[0] != arista[1]:
                         if math.dist((x, y), coord[vertice[0]]) <= radio:
-                            self.anadirSimplice(arista, circunrandio(p1, p2, coord[vertice[0]]))
                             ptoDentroCirc = True
                             break
                 if not ptoDentroCirc:
