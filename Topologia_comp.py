@@ -8,7 +8,6 @@ import matplotlib.colors
 import matplotlib as mpl
 import numpy as np
 
-#PRACTICA 1
 
 #Imprime una lista
 def imprimeLista(lista):
@@ -331,9 +330,6 @@ class Complejo_Simplicial():
         return Z_p - B_p
 
 
-    
-
-#PRACTICA 2
 
 #Calculo el radio de 
 def circunrandio(A, B, C):
