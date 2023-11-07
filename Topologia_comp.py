@@ -43,7 +43,7 @@ class Complejo_Simplicial():
 
 
 
-    #AUXILIARES
+    #METODOS AUXILIARES
 
     #Ordena complejo_maximal_peso segun peso (y longitud en caso de empate)
     def ordenaPorPesos(self):
@@ -94,14 +94,14 @@ class Complejo_Simplicial():
         res.sort(key=lambda x: (x[1], len(x[0])))
         return res
     
-    #Imprime el resultado de calculaListaCompletaPesos oeri sin los pesos
+    #Devuelve el orden en el que aparecen los simplices en una filtracion
     def ordenFiltracion(self):
         res = []
         for (simplice, p) in self.calculaListaCompletaPesos():
             res.append(simplice)
         return res
 
-    #Imprime los pesos 
+    #Devuelve la lista ordenada de todos los pesos que hay en el complejo simplicial
     def PesosOrdenados(self):
         self.ordenaPorPesos()
         res = [0]
@@ -111,6 +111,51 @@ class Complejo_Simplicial():
                 aux = p
                 res.append(p)
         return res
+    
+    #Dada una matriz normal de Smith, devuelve la cantidad de 1's que hay
+    def longDiagonal(self, matriz):
+        cont = 0
+        for i in range(min(len(matriz), len(matriz[0]))):
+            if matriz[i][i] == 1:
+                cont += 1
+        return cont
+    
+    #Devuelve la matriz traspuesta
+    def traspuesta(self, matriz):
+        return [[fila[i] for fila in matriz] for i in range(len(matriz[0]))]
+
+    #Dada una matriz en la que matriz[i][i] != 1, intercambia una fila o una columna para conseguirlo el 1
+    def consigueUno(self, matriz, i):
+        for j in range(i+1, len(matriz)):
+            if matriz[j][i] == 1:
+                matriz[i], matriz[j] = matriz[j], matriz[i]
+                return matriz, False
+        traspuesta = self.traspuesta(matriz)
+        for j in range(i+1, len(traspuesta)):
+            if traspuesta[j][i] == 1:
+                traspuesta[i], traspuesta[j] = traspuesta[j], traspuesta[i]
+                return self.traspuesta(traspuesta), False
+        return matriz, True
+
+    #Dada una matriz con un 1 en la posicion matriz[i][i], consigue todo 0's en la columna i a partir de la fila i+1
+    def despejaColumna(self, matriz, i):
+        for cont in range(i+1, len(matriz)):
+            if matriz[cont][i] == 1:
+                self.sumoFila(matriz, cont, i)
+        return matriz
+
+    #Dada una matriz con un 1 en la posicion matriz[i][i], consigue todo 0's en la fila i a partir de la columna i+1
+    def despejaFila(self, matriz, i):
+        traspuesta = self.traspuesta(matriz)
+        self.despejaColumna(traspuesta, i)
+        return self.traspuesta(traspuesta)
+
+    #Dada una matriz a la fila i le sumo la fila j modulo 2
+    def sumoFila(self, matriz, i, j):
+        for k in range(len(matriz[0])):
+            matriz[i][k] = (matriz[i][k] +  matriz[j][k])%2
+
+    
 
 
     #PEDIDAS POR LAS PRACTICAS
@@ -242,6 +287,50 @@ class Complejo_Simplicial():
             res.anadirSimplice(lista, p)
         return res
     
+    #Devuelve la matriz brode-p
+    def matrizBorde(self, p):
+        if not isinstance(p, int):
+            raise ValueError("El p dado debe ser un entero")
+        elif p < 0 or p > self.dimension():
+            raise ValueError("El p dado debe estar entre 0 y la dimension del complejo simplicial")
+        elif p == 0:
+            return [[0] * len(self.carasN(0)) for _ in range(1)]
+        else:
+            leyenda_filas = self.carasN(p-1)
+            leyenda_columnas = self.carasN(p)
+            matriz = [[0] * len(leyenda_columnas) for _ in range(len(leyenda_filas))]
+            
+            for i in range(len(leyenda_filas)):
+                for j in range(len(leyenda_columnas)):
+                    if self.esCara(leyenda_columnas[j], leyenda_filas[i]):
+                        matriz[i][j] = 1
+            return matriz
+    
+    #Dada una matriz (lista de listas) devuelve la forma normal de Smith
+    def formaNormalSmith(self, p):
+        matriz = self.matrizBorde(p)
+        for i in range(min(len(matriz), len(matriz[0]))):
+            if matriz[i][i] != 1:
+                matriz, fin = self.consigueUno(matriz, i)
+                if fin:
+                    break
+            matriz = self.despejaColumna(matriz, i)
+            matriz = self.despejaFila(matriz, i)
+
+        return matriz
+    
+    #Devuelve el numero de Betti
+    def numeroBetti(self, p):
+        normSimth_p = self.formaNormalSmith(p)
+        Z_p = len(normSimth_p[0]) - self.longDiagonal(normSimth_p)
+        if p == self.dimension():
+            B_p = 0
+        else:
+            B_p = self.longDiagonal(self.formaNormalSmith(p+1))
+        
+        return Z_p - B_p
+
+
     
 
 #PRACTICA 2
