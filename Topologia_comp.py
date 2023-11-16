@@ -14,6 +14,13 @@ def imprimeLista(lista):
     for elem in lista:
         print(elem)
 
+#Convierte una estructura que representa un complejo a la estructura necesaria para la clase Complejo_Simplicial
+def normalizaComplejo(sc):
+    res = list(sc)
+    for i, elem in enumerate(res):
+        res[i] = list(elem)
+    return res
+
 #Ordena una lista de listas
 def ordena(lista):
   for elem in lista:
@@ -29,16 +36,16 @@ class Complejo_Simplicial():
     # Constructor Definir en Python una clase para almacenar complejos simpliciales.
     # lista_de_simplices es la lista con los simplices, vale con poner los simplices maximales
     def __init__(self, lista_de_simplices, peso=0):
-        # Verificamos si lista_de_simplices es una lista y si todos sus elementos son listas. Una lista de listas.
-        if isinstance(lista_de_simplices, list) and all(isinstance(simplex, list) for simplex in lista_de_simplices):
-            #ordenamos lista de listas
-            ordena(lista_de_simplices)
-            complejo_maximal = lista_de_simplices
-            pesos = [peso]*len(complejo_maximal)
-            self.complejo_maximal_peso=list(zip(complejo_maximal,pesos))
-            self.complejo_maximal_peso.sort(key=lambda x: (x[1], len(x[0])))
-        else:
-            raise ValueError("Deben ser todo lista de listas")
+        try:
+            complejo_maximal = normalizaComplejo(lista_de_simplices)
+        except Exception as e:
+            raise ValueError("La representación de complejo simplicial debe poder convertirse a lista de listas")
+        
+        #ordenamos lista de listas
+        ordena(complejo_maximal)
+        pesos = [peso]*len(complejo_maximal)
+        self.complejo_maximal_peso=list(zip(complejo_maximal,pesos))
+        self.complejo_maximal_peso.sort(key=lambda x: (x[1], len(x[0])))
 
 
 
@@ -331,7 +338,7 @@ class Complejo_Simplicial():
 
 
 
-#Calculo el radio de 
+#Calculo el radio de circunferencia que pasa por tres puntos
 def circunrandio(A, B, C):
     #R = (AB* AC* BC)/4*Area
     #Area = det([A0, A1, 1], [B0, B1, 1], [C0, C1, 1])*0.5
@@ -339,10 +346,7 @@ def circunrandio(A, B, C):
     area = abs( np.linalg.det(matriz)) * 0.5
     if area == 0:
         raise ValueError("Los siguientes puntos estan alineados: ", A, B, C)
-
-    r = ((math.dist(A,B) * math.dist(A,C) * math.dist(B,C))/area)*0.25
-
-    return r
+    return ((math.dist(A,B) * math.dist(A,C) * math.dist(B,C))/area)*0.25
 
 
 class AlphaComplex(Complejo_Simplicial):
