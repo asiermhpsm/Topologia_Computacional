@@ -39,7 +39,7 @@ class Complejo_Simplicial():
         try:
             complejo_maximal = normalizaComplejo(lista_de_simplices)
         except Exception as e:
-            raise ValueError("La representación de complejo simplicial debe poder convertirse a lista de listas")
+            raise ValueError("La representación de complejo simplicial debe poder convertirse a lista de listas, pero ha saltado la excepcion ", e)
         
         #ordenamos lista de listas
         ordena(complejo_maximal)
@@ -130,17 +130,25 @@ class Complejo_Simplicial():
     def traspuesta(self, matriz):
         return [[fila[i] for fila in matriz] for i in range(len(matriz[0]))]
 
+    #Intecambia fila i por fila j
+    def cambiaFila(self, matriz, i, j):
+        matriz[i], matriz[j] = matriz[j], matriz[i]
+        return matriz
+    
+    #Intecambia columna i por fila j
+    def cambiaColum(self, matriz, i, j):
+        traspuesta = self.traspuesta(matriz)
+        traspuesta[i], traspuesta[j] = traspuesta[j], traspuesta[i]
+        return self.traspuesta(traspuesta)
+
     #Dada una matriz en la que matriz[i][i] != 1, intercambia una fila o una columna para conseguirlo el 1
     def consigueUno(self, matriz, i):
-        for j in range(i+1, len(matriz)):
-            if matriz[j][i] == 1:
-                matriz[i], matriz[j] = matriz[j], matriz[i]
-                return matriz, False
-        traspuesta = self.traspuesta(matriz)
-        for j in range(i+1, len(traspuesta)):
-            if traspuesta[j][i] == 1:
-                traspuesta[i], traspuesta[j] = traspuesta[j], traspuesta[i]
-                return self.traspuesta(traspuesta), False
+        for j in range(i, len(matriz)):
+            for k in range(i, len(matriz[0])):
+                if matriz[j][k] == 1:
+                    matriz = self.cambiaFila(matriz, i, j)
+                    matriz = self.cambiaColum(matriz, i, k)
+                    return matriz, False
         return matriz, True
 
     #Dada una matriz con un 1 en la posicion matriz[i][i], consigue todo 0's en la columna i a partir de la fila i+1
@@ -332,8 +340,7 @@ class Complejo_Simplicial():
         if p == self.dimension():
             B_p = 0
         else:
-            B_p = self.longDiagonal(self.formaNormalSmith(p+1))
-        
+            B_p = self.longDiagonal(self.formaNormalSmith(p+1))        
         return Z_p - B_p
 
 
