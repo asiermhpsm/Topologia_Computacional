@@ -118,6 +118,7 @@ class Complejo_Simplicial():
                 res.append(p)
         return res
     
+
     #Dada una matriz normal de Smith, devuelve la cantidad de 1's que hay
     def longDiagonal(self, matriz):
         cont = 0
@@ -169,6 +170,14 @@ class Complejo_Simplicial():
         for k in range(len(matriz[0])):
             matriz[i][k] = (matriz[i][k] +  matriz[j][k])%2
 
+    #Clasifica de simplices segun el algoritmo incremental, 1 si es positivo y -1 si es negativo
+    def clasificaSimplice(self, simplice):
+        if len(simplice) == 1:
+            return 1
+        elif len(simplice) == 2:
+            return
+        elif len(simplice) == 3:
+            return -1
     
 
 
@@ -343,6 +352,10 @@ class Complejo_Simplicial():
             B_p = self.longDiagonal(self.formaNormalSmith(p+1))        
         return Z_p - B_p
 
+    #Devuelve el numero de Betti mediante el algoritmo incremental
+    def numBettiIncremental(self):
+        
+        return
 
 
 #Calculo el radio de circunferencia que pasa por tres puntos
