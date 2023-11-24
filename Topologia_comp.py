@@ -357,6 +357,35 @@ class Complejo_Simplicial():
     def numBettiIncremental(self):
         
         return
+    
+
+    #REPRESENTACION
+
+    #Representa graficamente el alfa complejo para r=peso
+    def representaSubnivel(self, peso):
+        K = self.filtracion(peso)
+        
+        fig = voronoi_plot_2d(Voronoi(self.points),show_vertices=False,line_width=2, line_colors='blue' )
+        c=np.ones(len(self.points))
+        cmap = matplotlib.colors.ListedColormap("limegreen")
+
+        triangulos = K.carasN(2)
+        if triangulos:
+            plt.tripcolor(self.points[:,0],self.points[:,1],triangulos, c, edgecolor="k", lw=2,cmap=cmap)
+
+        aristas = K.carasN(1)
+        for arista in aristas:
+            x_arista = [self.points[i, 0] for i in arista]
+            y_arista = [self.points[i, 1] for i in arista]
+            plt.plot(x_arista, y_arista, color="black", linewidth=2)
+
+        plt.plot(self.points[:,0], self.points[:,1], 'ko')
+        plt.show()
+
+    #Representa todo el todos los subcomplejos del alfa-complejo
+    def representaAlfaComplejo(self):
+        for valor in self.PesosOrdenados():
+            self.representaSubnivel(valor)
 
 
 #Calculo el radio de circunferencia que pasa por tres puntos
@@ -417,32 +446,12 @@ class AlphaComplex(Complejo_Simplicial):
                 if not ptoDentroCirc:
                     self.anadirSimplice(arista, radio)
 
-    #Representa graficamente el alfa complejo para r=peso
-    def representaSubnivel(self, peso):
-        K = self.filtracion(peso)
-        
-        fig = voronoi_plot_2d(Voronoi(self.points),show_vertices=False,line_width=2, line_colors='blue' )
-        c=np.ones(len(self.points))
-        cmap = matplotlib.colors.ListedColormap("limegreen")
 
-        triangulos = K.carasN(2)
-        if triangulos:
-            plt.tripcolor(self.points[:,0],self.points[:,1],triangulos, c, edgecolor="k", lw=2,cmap=cmap)
-
-        aristas = K.carasN(1)
-        for arista in aristas:
-            x_arista = [self.points[i, 0] for i in arista]
-            y_arista = [self.points[i, 1] for i in arista]
-            plt.plot(x_arista, y_arista, color="black", linewidth=2)
-
-        plt.plot(self.points[:,0], self.points[:,1], 'ko')
-        plt.show()
-
-    #Representa todo el todos los subcomplejos del alfa-complejo
-    def representaAlfaComplejo(self):
-        for valor in self.PesosOrdenados():
-            self.representaSubnivel(valor)
-
+class VietorisRips(Complejo_Simplicial):
+    #Constructor 
+    def __init__(self, coord):
+        super().__init__([])
+        #TODO-calcular los pesos
 
 
 
