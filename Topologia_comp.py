@@ -9,6 +9,7 @@ import matplotlib as mpl
 import numpy as np
 
 
+
 #Imprime una lista
 def imprimeLista(lista):
     for elem in lista:
