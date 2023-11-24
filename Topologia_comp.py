@@ -397,9 +397,12 @@ class Complejo_Simplicial():
         plt.show()
 
     #Representa todo el todos los subcomplejos del alfa-complejo
-    def representaAlfaComplejo(self):
+    def representaComplejo(self):
         for valor in self.PesosOrdenados():
             self.representaSubnivel(valor)
+
+    def animaComplejo(self):
+        return
 
 
 #Calculo el radio de circunferencia que pasa por tres puntos
