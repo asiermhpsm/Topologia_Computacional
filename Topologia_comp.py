@@ -345,13 +345,10 @@ class Complejo_Simplicial():
     #Devuelve el numero de Betti mediante el algoritmo incremental
     def numBettiIncremental(self):
         N_iMenos1 = self.filtracion(0)
-        print(N_iMenos1.caras())
         simplice_nuevo = None
         beta0 = 0
         beta1 = 0
         for valor in self.PesosOrdenados():
-            print("Complejo: ", N_iMenos1.complejo_maximal_peso)
-            print("Componentes conexas: ", N_iMenos1.comp_conex())
             if valor == 0 :
                 beta0 = len(self.carasN(0))
             else:
@@ -359,7 +356,6 @@ class Complejo_Simplicial():
                 for elem,p in self.complejo_maximal_peso:
                     if p == valor:
                         simplice_nuevo = elem
-                        print("Simplice: ", simplice_nuevo)
 
                 if len(simplice_nuevo)==1:
                     beta0 = beta0 + 1
@@ -371,7 +367,9 @@ class Complejo_Simplicial():
                 else:
                     beta1 = beta1 - 1
                 N_iMenos1 = N_i
-            print(beta0, beta1, "\n")
+            #print("Complejo: ", N_iMenos1.complejo_maximal_peso)
+            #print("Componentes conexas: ", N_iMenos1.comp_conex())
+            #print(beta0, beta1, "\n")
         return beta0, beta1
     
 
