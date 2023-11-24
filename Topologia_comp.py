@@ -119,7 +119,6 @@ class Complejo_Simplicial():
                 res.append(p)
         return res
     
-
     #Dada una matriz normal de Smith, devuelve la cantidad de 1's que hay
     def longDiagonal(self, matriz):
         cont = 0
@@ -170,16 +169,6 @@ class Complejo_Simplicial():
     def sumoFila(self, matriz, i, j):
         for k in range(len(matriz[0])):
             matriz[i][k] = (matriz[i][k] +  matriz[j][k])%2
-
-    #Clasifica de simplices segun el algoritmo incremental, 1 si es positivo y -1 si es negativo
-    def clasificaSimplice(self, simplice):
-        if len(simplice) == 1:
-            return 1
-        elif len(simplice) == 2:
-            return
-        elif len(simplice) == 3:
-            return -1
-    
 
 
     #PEDIDAS POR LAS PRACTICAS
@@ -355,8 +344,35 @@ class Complejo_Simplicial():
 
     #Devuelve el numero de Betti mediante el algoritmo incremental
     def numBettiIncremental(self):
-        
-        return
+        N_iMenos1 = self.filtracion(0)
+        print(N_iMenos1.caras())
+        simplice_nuevo = None
+        beta0 = 0
+        beta1 = 0
+        for valor in self.PesosOrdenados():
+            print("Complejo: ", N_iMenos1.complejo_maximal_peso)
+            print("Componentes conexas: ", N_iMenos1.comp_conex())
+            if valor == 0 :
+                beta0 = len(self.carasN(0))
+            else:
+                N_i = self.filtracion(valor)
+                for elem,p in self.complejo_maximal_peso:
+                    if p == valor:
+                        simplice_nuevo = elem
+                        print("Simplice: ", simplice_nuevo)
+
+                if len(simplice_nuevo)==1:
+                    beta0 = beta0 + 1
+                elif len(simplice_nuevo)==2:
+                    if N_i.comp_conex == N_iMenos1.comp_conex:
+                        beta1 = beta1 + 1
+                    else:
+                        beta0 = beta0 - 1
+                else:
+                    beta1 = beta1 - 1
+                N_iMenos1 = N_i
+            print(beta0, beta1, "\n")
+        return beta0, beta1
     
 
     #REPRESENTACION
