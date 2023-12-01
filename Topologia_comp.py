@@ -471,14 +471,118 @@ class VietorisRips(Complejo_Simplicial):
         #TODO-calcular los pesos
 
 
+def ptosPersistencia(coord):
+    ac = AlphaComplex(coord)
+    carasPesos = ac.calculaListaCompletaPesos()
+    caras = []
+    for (simplice, p) in carasPesos:
+        caras.append(simplice)
+
+    N = len(caras)
+    matriz = [[0] * N for _ in range(N)]
+    for i in range(N):
+        for j in range(N):
+            if len(caras[i]) == len(caras[j])-1 and all(elem in caras[j] for elem in caras[i]):
+                matriz[i][j] = 1
+
+    lows = []
+    j = 0
+    while(j<N):
+        k = -1
+        for i in range(N):
+            if matriz[i][j] == 1:
+                k = i
+        if k == -1:
+            j = j +1
+            continue
+        
+        lowEncontrado = True
+        for (fil, col) in lows:
+            if fil == k:
+                for l in range(N):
+                    matriz[l][j] = (matriz[l][j] + matriz[l][col])%2
+                lowEncontrado = False
+                break
+
+        if lowEncontrado:
+            lows.append([k, j])
+            j = j + 1
+        
+    puntos = []  
+    for (fila, columna) in lows:
+        puntos.append([caras[fila], caras[columna]])
+    return dgmN(lows, carasPesos, 0), dgmN(lows, carasPesos, 1)
 
 
+def dgmN(lows, carasPesos, n):
+    res = []
 
+    #Calculo los simplices con peso infinito
+    for (simplice, peso) in carasPesos:
+        if len(simplice) == n+1:
+            pesoInfinito = True
+            for (fila, _) in lows:
+                if carasPesos[fila][0]== simplice:
+                    pesoInfinito = False
+                    break
+            if pesoInfinito:
+                res.append([peso, -1])
 
+    #Calculo el peso del resto de simplices
+    for (fila, columna) in lows:
+        if len(carasPesos[fila][0]) == n+1:
+            tuplaPesos = [-1, -1]
+            for (simplice, peso) in carasPesos:
+                if carasPesos[fila][0] == simplice:
+                    tuplaPesos[0] = peso
+                if carasPesos[columna][1] == simplice:
+                    tuplaPesos[1] = peso
+            res.append(tuplaPesos)
+    print(res)
+    return res
 
+#res = ptosPersistencia([(0.38021546727456423, 0.46419202339598786), (0.7951628297672293, 0.49263630135869474), 
+#                  (0.566623772375203, 0.038325621649018426), (0.3369306814864865, 0.7103735061134965), 
+#                  (0.08272837815822842, 0.2263273314352896), (0.5180166301873989, 0.6271769943824689), 
+#                  (0.33691411899985035, 0.8402045183219995), (0.33244488399729255, 0.4524636520475205), 
+#                  (0.11778991601260325, 0.6657734204021165), (0.9384303415747769, 0.2313873874340855)])
 
+#print(res)
 
+caras = [[0],[1],[2],[3],[4],[5],[0,3],[2,4],[3,5],[4,5],[1,2],[0,1],[1,3],[1,4],[3,4],[0,1,3],[1,2,4],[3,4,5],[1,3,4]]
+N = len(caras)
+matriz = [[0] * N for _ in range(N)]
+for i in range(N):
+    for j in range(N):
+        if len(caras[i]) == len(caras[j])-1 and all(elem in caras[j] for elem in caras[i]):
+            matriz[i][j] = 1
 
+lows = []
+j = 0
+while(j<N):
+    k = -1
+    for i in range(N):
+        if matriz[i][j] == 1:
+            k = i
+    if k == -1:
+        j = j +1
+        continue
+    
+    lowEncontrado = True
+    for (fil, col) in lows:
+        if fil == k:
+            for l in range(N):
+                matriz[l][j] = (matriz[l][j] + matriz[l][col])%2
+            lowEncontrado = False
+            break
 
+    if lowEncontrado:
+        lows.append([k, j])
+        j = j + 1
 
+print(lows)
 
+puntos = []  
+for (fila, columna) in lows:
+    puntos.append([caras[fila], caras[columna]])
+print(puntos)
