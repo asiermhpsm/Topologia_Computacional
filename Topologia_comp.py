@@ -9,6 +9,7 @@ import matplotlib as mpl
 import numpy as np
 
 
+#FUNCIONES AUXILIARES
 
 #Imprime una lista
 def imprimeLista(lista):
@@ -28,6 +29,18 @@ def ordena(lista):
     elem.sort()
   lista.sort()
 
+#Calculo el radio de circunferencia que pasa por tres puntos
+def circunrandio(A, B, C):
+    #R = (AB* AC* BC)/4*Area
+    #Area = det([A0, A1, 1], [B0, B1, 1], [C0, C1, 1])*0.5
+    matriz = np.array([[A[0], A[1], 1], [B[0], B[1], 1], [C[0], C[1], 1]])
+    area = abs( np.linalg.det(matriz)) * 0.5
+    if area == 0:
+        raise ValueError("Los siguientes puntos estan alineados: ", A, B, C)
+    return ((math.dist(A,B) * math.dist(A,C) * math.dist(B,C))/area)*0.25
+
+
+#CLASE PADRE
 class Complejo_Simplicial():
     #Lista de tuplas (list, num) donde list representa los simplice maximales (o no maximales pero con un peso distinto al maximal) y num el peso de ese simplice
     complejo_maximal_peso=None
@@ -401,21 +414,12 @@ class Complejo_Simplicial():
         for valor in self.PesosOrdenados():
             self.representaSubnivel(valor)
 
+    #Representa el complejo en una animacion
     def animaComplejo(self):
         return
 
 
-#Calculo el radio de circunferencia que pasa por tres puntos
-def circunrandio(A, B, C):
-    #R = (AB* AC* BC)/4*Area
-    #Area = det([A0, A1, 1], [B0, B1, 1], [C0, C1, 1])*0.5
-    matriz = np.array([[A[0], A[1], 1], [B[0], B[1], 1], [C[0], C[1], 1]])
-    area = abs( np.linalg.det(matriz)) * 0.5
-    if area == 0:
-        raise ValueError("Los siguientes puntos estan alineados: ", A, B, C)
-    return ((math.dist(A,B) * math.dist(A,C) * math.dist(B,C))/area)*0.25
-
-
+#CLASE ALFA COMPLEJO
 class AlphaComplex(Complejo_Simplicial):
     #Constructor, se le deben pasar las coordenadas de los puntos en la forma lista de tuplas (o lista) con dos elementos correspondientes a los valores x e y del punto
     def __init__(self, coord):
@@ -463,7 +467,81 @@ class AlphaComplex(Complejo_Simplicial):
                 if not ptoDentroCirc:
                     self.anadirSimplice(arista, radio)
 
+    #Devuelve la lista de puntos del diagrama de persistencia
+    def ptosPersistencia(self):
+        #Calculo el alfa-complejo y todos simplices con sus respectivos pesos
+        carasPesos = self.calculaListaCompletaPesos()
+        caras = []
+        for (simplice, _) in carasPesos:
+            caras.append(simplice)
 
+        #Calculo la matriz del algoritmo
+        N = len(caras)
+        matriz = [[0] * N for _ in range(N)]
+        for i in range(N):
+            for j in range(N):
+                if len(caras[i]) == len(caras[j])-1 and self.esCara(caras[j], caras[i]):
+                    matriz[i][j] = 1
+
+        dgm0 = []
+        dgm1 = []
+        lows = []
+        j = 0
+        while(j<N):
+            #Calculo el 1 mas abajo (-1 si es una columna de 0s)
+            k = -1
+            for i in range(N):
+                if matriz[i][j] == 1:
+                    k = i
+            if k == -1:
+                j = j + 1
+                continue
+            
+            #Hago al algoritmo para encontrar el low
+
+            lowEncontrado = True
+            #Si el 1 mas abajo esta a la altura de algun low entonces sumo columnas
+            for (fil, col) in lows:
+                if fil == k:
+                    for l in range(N):
+                        matriz[l][j] = (matriz[l][j] + matriz[l][col])%2
+                    lowEncontrado = False
+                    break
+            #Si he encontrado el low lo añado a los lows,  calculo el dgm0 o dgm1 y paso a la siguiente columna
+            if lowEncontrado:
+                lows.append([k, j])
+                if len(carasPesos[k][0])==1:
+                    dgm0.append((carasPesos[k][1], carasPesos[j][1]))
+                elif len(carasPesos[k][0])==2:
+                    dgm1.append((carasPesos[k][1], carasPesos[j][1]))
+                j = j + 1
+        
+        #Añado manualmente el punto del infinito
+        dgm0.append((0, int(carasPesos[0][1])+1))
+
+        return dgm0, dgm1
+
+    #Muestra el diagrama de persistencia
+    def diagramaPersistencia(self):
+        dgm0, dgm1 = self.ptosPersistencia()
+        plt.plot([tupla[0] for tupla in dgm0],[tupla[1] for tupla in dgm0],'bo')
+        plt.plot([tupla[0] for tupla in dgm1],[tupla[1] for tupla in dgm1],'ro')
+        max = dgm0[-1][1]
+        x_values = np.linspace(0, max, 100)
+        plt.plot(x_values, x_values, 'k--')
+        plt.plot(x_values, [max]*100, 'k--')
+        plt.xlabel('Nacimiento')
+        plt.ylabel('Muerte')
+        plt.show()
+
+    #Muestra el codigo de barras
+    def codigoBarras(self):
+        dgm0, dgm1 = self.ptosPersistencia()
+        #...
+        plt.show()
+
+
+#COMPLEJO VIETORI-RIPS
 class VietorisRips(Complejo_Simplicial):
     #Constructor 
     def __init__(self, coord):
@@ -471,118 +549,5 @@ class VietorisRips(Complejo_Simplicial):
         #TODO-calcular los pesos
 
 
-def ptosPersistencia(coord):
-    ac = AlphaComplex(coord)
-    carasPesos = ac.calculaListaCompletaPesos()
-    caras = []
-    for (simplice, p) in carasPesos:
-        caras.append(simplice)
-
-    N = len(caras)
-    matriz = [[0] * N for _ in range(N)]
-    for i in range(N):
-        for j in range(N):
-            if len(caras[i]) == len(caras[j])-1 and all(elem in caras[j] for elem in caras[i]):
-                matriz[i][j] = 1
-
-    lows = []
-    j = 0
-    while(j<N):
-        k = -1
-        for i in range(N):
-            if matriz[i][j] == 1:
-                k = i
-        if k == -1:
-            j = j +1
-            continue
-        
-        lowEncontrado = True
-        for (fil, col) in lows:
-            if fil == k:
-                for l in range(N):
-                    matriz[l][j] = (matriz[l][j] + matriz[l][col])%2
-                lowEncontrado = False
-                break
-
-        if lowEncontrado:
-            lows.append([k, j])
-            j = j + 1
-        
-    puntos = []  
-    for (fila, columna) in lows:
-        puntos.append([caras[fila], caras[columna]])
-    return dgmN(lows, carasPesos, 0), dgmN(lows, carasPesos, 1)
 
 
-def dgmN(lows, carasPesos, n):
-    res = []
-
-    #Calculo los simplices con peso infinito
-    for (simplice, peso) in carasPesos:
-        if len(simplice) == n+1:
-            pesoInfinito = True
-            for (fila, _) in lows:
-                if carasPesos[fila][0]== simplice:
-                    pesoInfinito = False
-                    break
-            if pesoInfinito:
-                res.append([peso, -1])
-
-    #Calculo el peso del resto de simplices
-    for (fila, columna) in lows:
-        if len(carasPesos[fila][0]) == n+1:
-            tuplaPesos = [-1, -1]
-            for (simplice, peso) in carasPesos:
-                if carasPesos[fila][0] == simplice:
-                    tuplaPesos[0] = peso
-                if carasPesos[columna][1] == simplice:
-                    tuplaPesos[1] = peso
-            res.append(tuplaPesos)
-    print(res)
-    return res
-
-#res = ptosPersistencia([(0.38021546727456423, 0.46419202339598786), (0.7951628297672293, 0.49263630135869474), 
-#                  (0.566623772375203, 0.038325621649018426), (0.3369306814864865, 0.7103735061134965), 
-#                  (0.08272837815822842, 0.2263273314352896), (0.5180166301873989, 0.6271769943824689), 
-#                  (0.33691411899985035, 0.8402045183219995), (0.33244488399729255, 0.4524636520475205), 
-#                  (0.11778991601260325, 0.6657734204021165), (0.9384303415747769, 0.2313873874340855)])
-
-#print(res)
-
-caras = [[0],[1],[2],[3],[4],[5],[0,3],[2,4],[3,5],[4,5],[1,2],[0,1],[1,3],[1,4],[3,4],[0,1,3],[1,2,4],[3,4,5],[1,3,4]]
-N = len(caras)
-matriz = [[0] * N for _ in range(N)]
-for i in range(N):
-    for j in range(N):
-        if len(caras[i]) == len(caras[j])-1 and all(elem in caras[j] for elem in caras[i]):
-            matriz[i][j] = 1
-
-lows = []
-j = 0
-while(j<N):
-    k = -1
-    for i in range(N):
-        if matriz[i][j] == 1:
-            k = i
-    if k == -1:
-        j = j +1
-        continue
-    
-    lowEncontrado = True
-    for (fil, col) in lows:
-        if fil == k:
-            for l in range(N):
-                matriz[l][j] = (matriz[l][j] + matriz[l][col])%2
-            lowEncontrado = False
-            break
-
-    if lowEncontrado:
-        lows.append([k, j])
-        j = j + 1
-
-print(lows)
-
-puntos = []  
-for (fila, columna) in lows:
-    puntos.append([caras[fila], caras[columna]])
-print(puntos)
