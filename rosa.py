@@ -16,9 +16,6 @@ def generate_points(num_points, petalos=3,  radio=5, max_error=0.3):
 
     return np.array([[x[i], y[i]] for i in range(num_points)])
 
-# Generar 100 puntos cercanos a un círculo de radio 1 con un error máximo de 0.3
-num_points = 100
-points = generate_points(num_points, petalos=3, max_error=0.3)
 
-alpha = AlphaComplex(points)
+alpha = AlphaComplex(generate_points(100, petalos=3, max_error=0.3))
 alpha.analiza()
