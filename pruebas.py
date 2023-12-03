@@ -1,21 +1,35 @@
+import numpy as np
 import matplotlib.pyplot as plt
 
-# Datos de ejemplo
-categorias = ['A', 'B', 'C', 'D']
-inicio_barras = [2, 5, 1, 3]  # Valores de inicio de las barras
-longitud_barras = [10, 15, 8, 12]  # Longitud de las barras
-espacio_entre_lineas = 1  # Espacio entre cada línea
+x = np.linspace(-3, 3, 100)
+y1 = np.sin(x)
+y2 = np.cos(x)
+y3 = 1 / (1 + np.exp(-x))
+y4 = np.exp(x)
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(2, 2)
 
-# Crear las barras como líneas finas de color rojo con espacio entre ellas
-for cat, inicio, longitud in zip(categorias, inicio_barras, longitud_barras):
-    ax.plot([inicio, inicio + longitud], [cat, cat], color='red', linewidth=1)
-    ax.plot([inicio + longitud, inicio + longitud + 3], [cat, cat], color='white', linewidth=0)  # Línea blanca para el espacio
+ax[0, 0].plot(x, y1)
+ax[0, 0].set_title("Sine function")
+ax[0, 0].get_xaxis().set_visible(False)
+ax[0, 0].get_yaxis().set_visible(False)
 
-ax.set_xlabel('Longitud')
-ax.set_ylabel('Categorías')
-ax.set_title('Barras Finas de Color Rojo con Espacio')
-plt.yticks([])  # Oculta las etiquetas del eje y
+ax[0, 1].plot(x, y2)
+ax[0, 1].set_title("Cosine function")
+ax[0, 1].get_xaxis().set_visible(False)
+ax[0, 1].get_yaxis().set_visible(False)
 
+
+ax[1, 0].plot(x, y3)
+ax[1, 0].set_title("Sigmoid function")
+ax[1, 0].get_xaxis().set_visible(False)
+ax[1, 0].get_yaxis().set_visible(False)
+
+
+ax[1, 1].plot(x, y4)
+ax[1, 1].set_title("Exponential function")
+ax[1, 1].get_xaxis().set_visible(False)
+ax[1, 1].get_yaxis().set_visible(False)
+
+fig.tight_layout()
 plt.show()

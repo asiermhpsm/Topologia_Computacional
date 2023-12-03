@@ -501,7 +501,14 @@ class Complejo_Simplicial():
             ax.plot([inicio, fin], [i, i], color='blue', linewidth=1)
             k=i
         for i, (inicio, fin) in enumerate(dgm1):
-            ax.plot([inicio, fin], [k+i, k+i], color='red', linewidth=1)
+            ax.plot([inicio, fin], [k+1+i, k+1+i], color='red', linewidth=1)
+
+        ax.set_xlim(0, dgm0[-1][1])
+        ax.spines['left'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.get_yaxis().set_visible(False)
+
 
         if mostrar:
             plt.show()
