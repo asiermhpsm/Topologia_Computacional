@@ -6,8 +6,9 @@ from scipy.spatial import Delaunay,Voronoi, voronoi_plot_2d
 import matplotlib.pyplot as plt
 import matplotlib.colors
 import matplotlib as mpl
+from matplotlib.animation import FuncAnimation
 import numpy as np
-
+from IPython.display import HTML
 
 #FUNCIONES AUXILIARES
 
@@ -100,10 +101,6 @@ class Complejo_Simplicial():
         if all(elem in simplice_maximal for elem in simplice):
           res = p if p < res else res
       return res
-    
-    #Imprime complejo_maximal_peso
-    def imprimeSimplicesConPesos(self):
-        imprimeLista(self.complejo_maximal_peso)
 
     #Calcula los pesos de todos los simplices y lo devuelve en una lista de tuplas
     def calculaListaCompletaPesos(self):
@@ -385,88 +382,6 @@ class Complejo_Simplicial():
             #print(beta0, beta1, "\n")
         return beta0, beta1
     
-
-    #REPRESENTACION
-
-    #Representa graficamente el alfa complejo para r=peso
-    def representaSubnivel(self, peso):
-        K = self.filtracion(peso)
-        
-        fig = voronoi_plot_2d(Voronoi(self.points),show_vertices=False,line_width=2, line_colors='blue' )
-        c=np.ones(len(self.points))
-        cmap = matplotlib.colors.ListedColormap("limegreen")
-
-        triangulos = K.carasN(2)
-        if triangulos:
-            plt.tripcolor(self.points[:,0],self.points[:,1],triangulos, c, edgecolor="k", lw=2,cmap=cmap)
-
-        aristas = K.carasN(1)
-        for arista in aristas:
-            x_arista = [self.points[i, 0] for i in arista]
-            y_arista = [self.points[i, 1] for i in arista]
-            plt.plot(x_arista, y_arista, color="black", linewidth=2)
-
-        plt.plot(self.points[:,0], self.points[:,1], 'ko')
-        plt.show()
-
-    #Representa todo el todos los subcomplejos del alfa-complejo
-    def representaComplejo(self):
-        for valor in self.PesosOrdenados():
-            self.representaSubnivel(valor)
-
-    #Representa el complejo en una animacion
-    def animaComplejo(self):
-        return
-
-
-#CLASE ALFA COMPLEJO
-class AlphaComplex(Complejo_Simplicial):
-    #Constructor, se le deben pasar las coordenadas de los puntos en la forma lista de tuplas (o lista) con dos elementos correspondientes a los valores x e y del punto
-    def __init__(self, coord):
-        self.points = coord
-        Del = Delaunay(coord)
-        simplices_maximales = [list(elem) for elem in Del.simplices]
-        simplices_maximales = [[int(x) for x in sublist] for sublist in simplices_maximales]
-
-        super().__init__([])
-        sc_aux = Complejo_Simplicial(simplices_maximales)
-
-
-        self.anadirPesosVertices(sc_aux.carasN(0))
-        self.anadirPesosTriangulos(coord, sc_aux.carasN(2))
-        self.anadirPesosAristas(coord, sc_aux.carasN(1), sc_aux.carasN(0))
-
-    #Añade los pesos de los vertices
-    def anadirPesosVertices(self, vertices):
-        for vertice in vertices:
-            self.anadirSimplice(vertice, 0)
-
-    #Añade los pesos de los triangulos
-    def anadirPesosTriangulos(self, coord, triangulos):
-        for triangulo in triangulos:
-            p1 = coord[triangulo[0]]
-            p2 = coord[triangulo[1]]
-            p3 = coord[triangulo[2]]
-            radio = circunrandio(p1, p2, p3)
-            self.anadirSimplice(triangulo, radio)
-
-    #Añade los pesos de las aristas
-    def anadirPesosAristas(self, coord, aristas, vertices):
-        for arista in aristas:
-                ptoDentroCirc = False
-                p1 = coord[arista[0]]
-                p2 = coord[arista[1]]
-                radio = math.dist(p1,p2)*0.5
-                x = (p1[0]+ p2[0])/2
-                y = (p1[1]+ p2[1])/2
-                for vertice in vertices:
-                    if vertice[0] != arista[0] and vertice[0] != arista[1]:
-                        if math.dist((x, y), coord[vertice[0]]) <= radio:
-                            ptoDentroCirc = True
-                            break
-                if not ptoDentroCirc:
-                    self.anadirSimplice(arista, radio)
-
     #Devuelve la lista de puntos del diagrama de persistencia
     def ptosPersistencia(self):
         #Calculo el alfa-complejo y todos simplices con sus respectivos pesos
@@ -521,25 +436,159 @@ class AlphaComplex(Complejo_Simplicial):
 
         return dgm0, dgm1
 
+
+    #REPRESENTACION
+
+    #Representa graficamente el alfa complejo para r=peso
+    def representaSubnivel(self, peso, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots()
+
+        K = self.filtracion(peso)
+        
+        voronoi_plot_2d(Voronoi(self.points),ax=ax, show_vertices=False,line_width=2, line_colors='blue' )
+        c=np.ones(len(self.points))
+        cmap = matplotlib.colors.ListedColormap("limegreen")
+
+        triangulos = K.carasN(2)
+        if triangulos:
+            ax.tripcolor(self.points[:,0],self.points[:,1],triangulos, c, edgecolor="k", lw=2,cmap=cmap)
+
+        aristas = K.carasN(1)
+        for arista in aristas:
+            x_arista = [self.points[i, 0] for i in arista]
+            y_arista = [self.points[i, 1] for i in arista]
+            ax.plot(x_arista, y_arista, color="black", linewidth=2)
+
+        ax.plot(self.points[:,0], self.points[:,1], 'ko')
+        
+    #Representa todo el todos los subcomplejos del alfa-complejo
+    def representaComplejo(self):
+        for valor in self.PesosOrdenados():
+            self.representaSubnivel(valor)
+            plt.show()
+
     #Muestra el diagrama de persistencia
-    def diagramaPersistencia(self):
+    def diagramaPersistencia(self, ax=None):
+        mostrar = False
+        if ax is None:
+            mostrar = True
+            fig, ax = plt.subplots()
+
         dgm0, dgm1 = self.ptosPersistencia()
-        plt.plot([tupla[0] for tupla in dgm0],[tupla[1] for tupla in dgm0],'bo')
-        plt.plot([tupla[0] for tupla in dgm1],[tupla[1] for tupla in dgm1],'ro')
-        max = dgm0[-1][1]
-        x_values = np.linspace(0, max, 100)
-        plt.plot(x_values, x_values, 'k--')
-        plt.plot(x_values, [max]*100, 'k--')
-        plt.xlabel('Nacimiento')
-        plt.ylabel('Muerte')
-        plt.show()
+        ax.plot([tupla[0] for tupla in dgm0],[tupla[1] for tupla in dgm0],'bo')
+        ax.plot([tupla[0] for tupla in dgm1],[tupla[1] for tupla in dgm1],'ro')
+        maximo = max(dgm0[-1][1], dgm1[-1][-1])
+        x_values = np.linspace(0, maximo, 100)
+        ax.plot(x_values, x_values, 'k--')
+        ax.plot(x_values, [maximo]*100, 'k--')
+        ax.set_xlabel('Nacimiento')
+        ax.set_ylabel('Muerte')
+
+        if mostrar:
+            plt.show()
 
     #Muestra el codigo de barras
-    def codigoBarras(self):
+    def codigoBarras(self, ax=None):
+        mostrar = False
+        if ax is None :
+            mostrar = True
+            fig, ax= plt.subplots()
+
         dgm0, dgm1 = self.ptosPersistencia()
-        #...
+        k=0
+        for i, (inicio, fin) in enumerate(dgm0):
+            ax.plot([inicio, fin], [i, i], color='blue', linewidth=1)
+            k=i
+        for i, (inicio, fin) in enumerate(dgm1):
+            ax.plot([inicio, fin], [k+i, k+i], color='red', linewidth=1)
+
+        if mostrar:
+            plt.show()
+
+    #Representa el complejo en una animacion
+    def animaComplejo(self, fig=None, ax=None):
+        mostrar = False
+        if ax is None or fig is None:
+            mostrar = True
+            fig, ax = plt.subplots()
+
+        def update(frame):
+            ax.clear()
+            peso = self.PesosOrdenados()[frame]
+            self.representaSubnivel(peso, ax)
+            ax.set_title('Triangulacion')
+
+        num_frames = len(self.PesosOrdenados())
+        ani = FuncAnimation(fig, update, frames=num_frames, interval=100)
+
+        if mostrar:
+            plt.show()
+        else:
+            return ani
+
+    #Presenta resultados
+    def analiza(self):
+        fig, axes = plt.subplots(2, 2)
+
+        ani = self.animaComplejo(fig, axes[0, 0])
+
+        self.diagramaPersistencia(axes[1, 0])
+        axes[1, 0].set_title('Diagrama de persistencia')
+
+        self.codigoBarras(axes[1, 1])
+        axes[1, 1].set_title('Codigo de barras')
+
+        plt.tight_layout()
         plt.show()
 
+#CLASE ALFA COMPLEJO
+class AlphaComplex(Complejo_Simplicial):
+    #Constructor, se le deben pasar las coordenadas de los puntos en la forma lista de tuplas (o lista) con dos elementos correspondientes a los valores x e y del punto
+    def __init__(self, coord):
+        self.points = coord
+        Del = Delaunay(coord)
+        simplices_maximales = [list(elem) for elem in Del.simplices]
+        simplices_maximales = [[int(x) for x in sublist] for sublist in simplices_maximales]
+
+        super().__init__([])
+        sc_aux = Complejo_Simplicial(simplices_maximales)
+
+
+        self.anadirPesosVertices(sc_aux.carasN(0))
+        self.anadirPesosTriangulos(coord, sc_aux.carasN(2))
+        self.anadirPesosAristas(coord, sc_aux.carasN(1), sc_aux.carasN(0))
+
+    #Añade los pesos de los vertices
+    def anadirPesosVertices(self, vertices):
+        for vertice in vertices:
+            self.anadirSimplice(vertice, 0)
+
+    #Añade los pesos de los triangulos
+    def anadirPesosTriangulos(self, coord, triangulos):
+        for triangulo in triangulos:
+            p1 = coord[triangulo[0]]
+            p2 = coord[triangulo[1]]
+            p3 = coord[triangulo[2]]
+            radio = circunrandio(p1, p2, p3)
+            self.anadirSimplice(triangulo, radio)
+
+    #Añade los pesos de las aristas
+    def anadirPesosAristas(self, coord, aristas, vertices):
+        for arista in aristas:
+                ptoDentroCirc = False
+                p1 = coord[arista[0]]
+                p2 = coord[arista[1]]
+                radio = math.dist(p1,p2)*0.5
+                x = (p1[0]+ p2[0])/2
+                y = (p1[1]+ p2[1])/2
+                for vertice in vertices:
+                    if vertice[0] != arista[0] and vertice[0] != arista[1]:
+                        if math.dist((x, y), coord[vertice[0]]) <= radio:
+                            ptoDentroCirc = True
+                            break
+                if not ptoDentroCirc:
+                    self.anadirSimplice(arista, radio)
 
 #COMPLEJO VIETORI-RIPS
 class VietorisRips(Complejo_Simplicial):
@@ -547,7 +596,6 @@ class VietorisRips(Complejo_Simplicial):
     def __init__(self, coord):
         super().__init__([])
         #TODO-calcular los pesos
-
 
 
 
