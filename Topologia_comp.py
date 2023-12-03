@@ -527,7 +527,7 @@ class Complejo_Simplicial():
             ax.set_title('Triangulacion')
 
         num_frames = len(self.PesosOrdenados())
-        ani = FuncAnimation(fig, update, frames=num_frames, interval=100)
+        ani = FuncAnimation(fig, update, frames=num_frames, interval=20)
 
         if mostrar:
             plt.show()
