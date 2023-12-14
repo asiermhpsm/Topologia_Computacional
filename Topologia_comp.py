@@ -499,9 +499,11 @@ class Complejo_Simplicial():
         k=0
         for i, (inicio, fin) in enumerate(dgm0):
             ax.plot([inicio, fin], [i, i], color='blue', linewidth=1)
+            #ax.plot([0, dgm0[-1][1]], [i, i], color='white', linewidth=1)
             k=i
         for i, (inicio, fin) in enumerate(dgm1):
             ax.plot([inicio, fin], [k+1+i, k+1+i], color='red', linewidth=1)
+            #ax.plot([0, dgm0[-1][1]], [i, i], color='white', linewidth=1)
 
         ax.set_xlim(0, dgm0[-1][1])
         ax.spines['left'].set_visible(False)

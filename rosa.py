@@ -17,5 +17,5 @@ def generate_points(num_points, petalos=3,  radio=5, max_error=0.3):
     return np.array([[x[i], y[i]] for i in range(num_points)])
 
 
-alpha = AlphaComplex(generate_points(100, petalos=3, max_error=0.3))
+alpha = AlphaComplex(generate_points(100, petalos=2, max_error=0.3))
 alpha.analiza()
