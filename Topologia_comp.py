@@ -478,7 +478,7 @@ class Complejo_Simplicial():
         return dgm0, dgm1
 
     #Muestra el diagrama de persistencia
-    def diagramaPersistencia(self, ax=None):
+    def diagramaPersistencia(self, ax=None):        
         mostrar = False
         if ax is None:
             mostrar = True
