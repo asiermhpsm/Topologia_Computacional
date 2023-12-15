@@ -8,7 +8,6 @@ import matplotlib.colors
 import matplotlib as mpl
 from matplotlib.animation import FuncAnimation
 import numpy as np
-from IPython.display import HTML
 
 #FUNCIONES AUXILIARES
 
@@ -594,7 +593,10 @@ class Complejo_Simplicial():
     def analiza(self):
         fig, axes = plt.subplots(2, 2)
 
-        ani = self.animaComplejo(fig, axes[0, 0])
+
+        axes[0, 0].scatter(self.points[:,0], self.points[:,1], color='black', marker='o')
+
+        ani = self.animaComplejo(fig, axes[0, 1])
 
         self.diagramaPersistencia(axes[1, 0])
         axes[1, 0].set_title('Diagrama de persistencia')
@@ -666,8 +668,34 @@ class AlphaComplex(Complejo_Simplicial):
 class VietorisRips(Complejo_Simplicial):
     #Constructor 
     def __init__(self, coord):
+        self.points = coord
+        print()
+
         super().__init__([])
-        #TODO-calcular los pesos
+        sc_aux = Complejo_Simplicial([list(range(len(coord)))])
+
+        for vertice in sc_aux.carasN(0):
+            self.anadirSimplice(vertice, 0)
+
+        for arista in sc_aux.carasN(1):
+            p1 = coord[arista[0]]
+            p2 = coord[arista[1]]
+            self.anadirSimplice(arista, math.dist(p1, p2)*0.5)
+
+        for triangulo in sc_aux.carasN(2):
+            pesoAris1=self.calculaPesoSimplice([triangulo[0], triangulo[1]])
+            pesoAris2=self.calculaPesoSimplice([triangulo[0], triangulo[2]])
+            pesoAris3=self.calculaPesoSimplice([triangulo[1], triangulo[2]])
+            self.anadirSimplice(triangulo, max(pesoAris1, pesoAris2, pesoAris3))
+
+        print(self.complejo_maximal_peso)
+
+        
+
+
+    
+
+
 
 
 
