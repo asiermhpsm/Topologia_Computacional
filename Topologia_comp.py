@@ -1,13 +1,13 @@
 from itertools import combinations
 import networkx as nx
 import math
+import numpy as np
 
 from scipy.spatial import Delaunay,Voronoi, voronoi_plot_2d
 import matplotlib.pyplot as plt
 import matplotlib.colors
-import matplotlib as mpl
 from matplotlib.animation import FuncAnimation
-import numpy as np
+
 
 #FUNCIONES AUXILIARES
 
@@ -42,12 +42,17 @@ def circunrandio(A, B, C):
 
 #CLASE PADRE
 class Complejo_Simplicial():
-    #Lista de tuplas (list, num) donde list representa los simplice maximales (o no maximales pero con un peso distinto al maximal) y num el peso de ese simplice
+    #Lista de tuplas (list, num) donde list representa los simplice maximales 
+    #(o no maximales pero con un peso distinto al maximal) y num el peso de ese simplice
+    #es decir [([1], 0), ([1,2], 2), ([3,4,5], 3), ...]
+    #Además complejo_maximal_peso siempre debe estar ordenado por peso 
+    #y en caso de empate por longitud de simplice
     complejo_maximal_peso=None
 
+    #----------------------------------------------------------------
     #CONSTRUCTOR
+    #----------------------------------------------------------------
 
-    # Constructor Definir en Python una clase para almacenar complejos simpliciales.
     # lista_de_simplices es la lista con los simplices, vale con poner los simplices maximales
     def __init__(self, lista_de_simplices, peso=0):
         try:
@@ -71,6 +76,7 @@ class Complejo_Simplicial():
 
     # Devuelve la estrella cerrada del simplice 'simplice'
     def st_cerrada(self, simplice):
+        simplice = list(simplice)
         simplice.sort()
         st = self.st(simplice)
         res = list(st)
@@ -90,22 +96,6 @@ class Complejo_Simplicial():
     def esCara(self, simpliceMayor, simpliceMenor):
         return all(elem in simpliceMayor for elem in simpliceMenor)
 
-    #Devuelve el n-equeleto
-    def esqueleto(self, n):
-        res = []
-        for i in range(n+1):
-            res.extend(self.carasN(i))
-        ordena(res)
-        return res
-
-    #Añade un nuevo simplice al complejo
-    def anadirSimplice(self, simplice, peso):
-        if isinstance(simplice, list) and all( (isinstance(simplex, int) or isinstance(simplex, float)) for simplex in simplice):
-            simplice.sort()
-            self.complejo_maximal_peso.append((simplice,peso))
-        else:
-            raise ValueError("El simplice dado debe ser una lista de enteros")
-
     #Devuelve los vértices aislados
     def aislados(self):
         res = []
@@ -122,45 +112,97 @@ class Complejo_Simplicial():
         ordena(res)
         return res
 
+    #Devuelve el n-equeleto
+    def esqueleto(self, n):
+        res = []
+        for i in range(n+1):
+            res.extend(self.carasN(i))
+        ordena(res)
+        return res
+
+    #Calcula el paseo de un simplice, devuelve None si el simplice no existe
+    def calculaPesoSimplice(self, simplice):
+      simplice.sort()
+      res = None
+      for (simplice_maximal, p) in self.complejo_maximal_peso:
+        if res is None and all(elem in simplice_maximal for elem in simplice):
+          res = p
+        if all(elem in simplice_maximal for elem in simplice):
+          res = p if p < res else res
+      return res
+
+    #Calcula el paseo de un simplice, que será el minimo de los maximales en los que esté
+    def calculaPesoSimplice(self, simplice):
+      simplice.sort()
+      res = None
+      for (simplice_maximal, p) in self.complejo_maximal_peso:
+        if res is None and self.esCara(simplice_maximal, simplice):
+          res = p
+        elif self.esCara(simplice_maximal, simplice):
+          res = p if p < res else res
+      return res
+
+    #Añade un nuevo simplice al complejo
+    def anadirSimplice(self, simplice, peso):
+        simplice = list(simplice)
+        #if isinstance(simplice, list) and all( (isinstance(simplex, int) or isinstance(simplex, float)) for simplex in simplice):
+        if isinstance(simplice, list) and all( isinstance(simplex, int) for simplex in simplice):
+            simplice.sort()
+            peso_actual = self.calculaPesoSimplice(simplice)
+            #Solo añado el simplice si el simplice no existe
+            #o el nuevo peso es menor que el que tenía antes
+            if peso_actual is None or peso < peso_actual:
+                self.complejo_maximal_peso.append((simplice,peso))   
+        else:
+            raise ValueError("El simplice dado debe ser una lista de enteros")
+
+    #Devuelve el orden en el que aparecen los simplices en una filtracion
+    def ordenFiltracion(self):
+        res = []
+        for (simplice, _) in self.calculaListaCompletaPesos():
+            res.append(simplice)
+        return res
+
     #--------------------------------
     #Métodos pedidos
     #--------------------------------
 
     # Devuelve la dimension del complejo simplicial, la diemnsión la del simplice mas grande y es el número de vertices menos uno.
     def dimension(self):
-        return max(len(simplex) for (simplex,p) in self.complejo_maximal_peso)-1
+        return max(len(simplex) for (simplex,_) in self.complejo_maximal_peso)-1
 
-    # Definir una función que devuelva el conjunto de todas las caras del complejo simplicial.
+    # Devuelve el conjunto de todas las caras del complejo simplicial.
     def caras(self):
         res=[]
-        for (lista,p) in self.complejo_maximal_peso:
+        for (simplice,_) in self.complejo_maximal_peso:
             #Obtengo todas las posibles combinaciones de todas las longitudes posibles
-            for i in range(len(lista)):
-                combinacion = [list(comb) for comb in combinations(lista, i+1)]
+            for i in range(len(simplice)):
+                combinacion = [list(comb) for comb in combinations(simplice, i+1)]
                 for elem in combinacion:
-                    #si el elemento (ordenado) no esta ya añadido, lo añado
+                    #si el elemento (ordenado) no está ya añadido, lo añado
                     elem.sort()
                     if elem not in res:
                         res.append(elem)
-                        ordena(res)
+        ordena(res)
         return res
 
     # Devuelve todas las n-caras del complejo simplicia
     def carasN(self, n):
         res=[]
-        for (lista,p) in self.complejo_maximal_peso:
-            combinacion = [list(comb) for comb in combinations(lista, n+1)]
+        for (simplice,_) in self.complejo_maximal_peso:
+            combinacion = [list(comb) for comb in combinations(simplice, n+1)]
             for elem in combinacion:
                 #si el elemento (ordenado) no esta ya añadido, lo añado
                 elem.sort()
                 if elem not in res:
                     res.append(elem)
-                    ordena(res)
+        ordena(res)
         return res
 
     # Devuelve la estrella del simplice 'simplice'
     def st(self, simplice):
         complejo_simplicial=self.caras()
+        simplice = list(simplice)
         simplice.sort()
         if simplice not in complejo_simplicial:
             raise ValueError("El simplice dado no se encuentra en el complejo simplicial")
@@ -174,13 +216,14 @@ class Complejo_Simplicial():
 
     # Devuelve el link del simplice 'simplice'
     def link(self, simplice):
+        simplice = list(simplice)
         simplice.sort()
         st_c = self.st_cerrada(simplice)
         res = []
         for elem_c in st_c:
             if all(elem not in elem_c for elem in simplice):
                 res.append(elem_c)
-            ordena(res)
+        ordena(res)
         return res
 
     #Devuelve la característica de Euler
@@ -193,8 +236,10 @@ class Complejo_Simplicial():
     #Devuelve el numero de componenetes conexas
     def comp_conex(self):
         G = nx.Graph()
+        #Creo un grafo con el esqueleto
         for arista in self.carasN(1):
             G.add_edge(*arista)
+        #Los puntos aislados los añado creando aristas con ellos como principio y como fin
         ais = self.aislados()
         for vertice in ais:
             G.add_edge(vertice[0], vertice[0])
@@ -202,6 +247,7 @@ class Complejo_Simplicial():
 
     #Añade varios simplices al complejo
     def anadirSimplices(self, lista_de_simplices, peso):
+        lista_de_simplices = normalizaComplejo(lista_de_simplices)
       # Verificamos si lista_de_simplices es una lista y si todos sus elementos son listas. Una lista de listas.
         if isinstance(lista_de_simplices, list) and all(isinstance(simplex, list) for simplex in lista_de_simplices):
             for simplice in lista_de_simplices:
@@ -215,9 +261,8 @@ class Complejo_Simplicial():
     def filtracion(self, peso):
         res = Complejo_Simplicial([])
         for (lista, p) in self.complejo_maximal_peso:
-            if p>peso:
-                break
-            res.anadirSimplice(lista, p)
+            if p<=peso:
+                res.anadirSimplice(lista, p)  
         return res
 
 
@@ -229,7 +274,9 @@ class Complejo_Simplicial():
     #Métodos auxiliares
     #--------------------------------
 
-    #Representa graficamente el alfa complejo para r=peso
+    #Generalización de representación de complejo según un peso,
+    #las clases hijas podrán añadir algo mas si es necesario
+    #axes simplemente para representarlo en una cierta ventana de matplotlib así se desea
     def representaSubnivel(self, peso, ax=None):
         try:
             self.points
@@ -241,7 +288,6 @@ class Complejo_Simplicial():
 
         K = self.filtracion(peso)
         
-        voronoi_plot_2d(Voronoi(self.points),ax=ax, show_vertices=False,line_width=2, line_colors='blue' )
         c=np.ones(len(self.points))
         cmap = matplotlib.colors.ListedColormap("limegreen")
 
@@ -257,17 +303,29 @@ class Complejo_Simplicial():
 
         ax.plot(self.points[:,0], self.points[:,1], 'ko')
 
+    #Representa los puntos
+    def representaPuntos(self, ax=None):
+        try:
+            self.points
+        except Exception as e:
+            raise ValueError("No se puede representar un complejo simplicial directamente desde la clase padre")
+        
+        mostrar = False
+        if ax is None:
+            mostrar = True
+            fig, ax = plt.subplots()
+        
+        ax.scatter(self.points[:,0], self.points[:,1], color='black', marker='o')
+
+        if mostrar:
+            plt.show()
+
     #--------------------------------
     #Métodos pedidos
     #--------------------------------
 
     #Representa todo el todos los subcomplejos del alfa-complejo
     def representaComplejo(self):
-        try:
-            self.points
-        except Exception as e:
-            raise ValueError("No se puede representar un complejo simplicial directamente desde la clase padre")
-        
         for valor in self.PesosOrdenados():
             self.representaSubnivel(valor)
             plt.show()
@@ -286,7 +344,7 @@ class Complejo_Simplicial():
         for j in range(i, len(matriz)):
             for k in range(i, len(matriz[0])):
                 if matriz[j][k] == 1:
-                    matriz = self.cambiaFila(matriz, i, j)
+                    matriz[i], matriz[j] = matriz[j], matriz[i]
                     matriz = self.cambiaColum(matriz, i, k)
                     return matriz, False
         return matriz, True
@@ -303,11 +361,6 @@ class Complejo_Simplicial():
         traspuesta = self.traspuesta(matriz)
         self.despejaColumna(traspuesta, i)
         return self.traspuesta(traspuesta)
-    
-    #Intecambia fila i por fila j
-    def cambiaFila(self, matriz, i, j):
-        matriz[i], matriz[j] = matriz[j], matriz[i]
-        return matriz
     
     #Intecambia columna i por fila j
     def cambiaColum(self, matriz, i, j):
@@ -337,19 +390,6 @@ class Complejo_Simplicial():
     #Métodos pedidos
     #--------------------------------
 
-    #Dada una matriz (lista de listas) devuelve la forma normal de Smith
-    def formaNormalSmith(self, p):
-        matriz = self.matrizBorde(p)
-        for i in range(min(len(matriz), len(matriz[0]))):
-            if matriz[i][i] != 1:
-                matriz, fin = self.consigueUno(matriz, i)
-                if fin:
-                    break
-            matriz = self.despejaColumna(matriz, i)
-            matriz = self.despejaFila(matriz, i)
-
-        return matriz
-
     #Devuelve la matriz brode-p
     def matrizBorde(self, p):
         if not isinstance(p, int):
@@ -368,6 +408,19 @@ class Complejo_Simplicial():
                     if self.esCara(leyenda_columnas[j], leyenda_filas[i]):
                         matriz[i][j] = 1
             return matriz
+
+    #Dada una matriz (lista de listas) devuelve la forma normal de Smith
+    def formaNormalSmith(self, p):
+        matriz = self.matrizBorde(p)
+        for i in range(min(len(matriz), len(matriz[0]))):
+            if matriz[i][i] != 1:
+                matriz, fin = self.consigueUno(matriz, i)
+                if fin:
+                    break
+            matriz = self.despejaColumna(matriz, i)
+            matriz = self.despejaFila(matriz, i)
+
+        return matriz
 
     #Devuelve el numero de Betti
     def numeroBetti(self, p):
@@ -418,6 +471,13 @@ class Complejo_Simplicial():
     #Métodos auxiliares
     #--------------------------------
 
+    #Devuelve el ultimo putno de persistenca de dgm1 que no nace y muere en el mismo momento
+    def limite_representacion(self, dgm1):
+        for (nacimiento, muerte) in dgm1[::-1]:
+            if muerte-nacimiento != 0:
+                return int(muerte) + 1
+        return 0
+
     #--------------------------------
     #Métodos pedidos
     #--------------------------------
@@ -448,12 +508,12 @@ class Complejo_Simplicial():
             for i in range(N):
                 if matriz[i][j] == 1:
                     k = i
+            #Si es una columna de 0s sigo a la siguente columna
             if k == -1:
                 j = j + 1
                 continue
             
             #Hago al algoritmo para encontrar el low
-
             lowEncontrado = True
             #Si el 1 mas abajo esta a la altura de algun low entonces sumo columnas
             for (fil, col) in lows:
@@ -462,17 +522,18 @@ class Complejo_Simplicial():
                         matriz[l][j] = (matriz[l][j] + matriz[l][col])%2
                     lowEncontrado = False
                     break
+
             #Si he encontrado el low lo añado a los lows,  calculo el dgm0 o dgm1 y paso a la siguiente columna
             if lowEncontrado:
                 lows.append([k, j])
                 if len(carasPesos[k][0])==1:
-                    dgm0.append((carasPesos[k][1], carasPesos[j][1]))
+                    dgm0.append((0, carasPesos[j][1]))
                 elif len(carasPesos[k][0])==2:
                     dgm1.append((carasPesos[k][1], carasPesos[j][1]))
                 j = j + 1
         
         #Añado manualmente el punto del infinito
-        dgm0.append((0, int(carasPesos[0][1])+1))
+        dgm0.append((0, int(max(dgm0 + dgm1, key=lambda x: x[1])[0])+1))
 
         return dgm0, dgm1
 
@@ -492,6 +553,8 @@ class Complejo_Simplicial():
         ax.plot(x_values, [maximo]*100, 'k--')
         ax.set_xlabel('Nacimiento')
         ax.set_ylabel('Muerte')
+        ax.set_xlim(-0.05, self.limite_representacion(dgm1))
+        ax.set_ylim(-0.05, self.limite_representacion(dgm1))
 
         if mostrar:
             plt.show()
@@ -505,14 +568,14 @@ class Complejo_Simplicial():
 
         dgm0, dgm1 = self.ptosPersistencia()
         k=0
-        separacion = 0.1
+        separacion = self.limite_representacion(dgm1)/10
         for i, (inicio, fin) in enumerate(dgm0):
             ax.plot([inicio, fin], [i+separacion, i+separacion], color='blue', linewidth=1)
             k=i
         for i, (inicio, fin) in enumerate(dgm1):
             ax.plot([inicio, fin], [k+1+i+separacion, k+1+i+separacion], color='red', linewidth=1)
             
-        ax.set_xlim(0, dgm0[-1][1])
+        ax.set_xlim(0, self.limite_representacion(dgm1))
         ax.spines['left'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -526,17 +589,6 @@ class Complejo_Simplicial():
     #METODOS AUXILIARES GENERALES
     #----------------------------------------------------------------------------------------------------------------------
 
-    #Calcula el paseo de un simplice
-    def calculaPesoSimplice(self, simplice):
-      simplice.sort()
-      res = None
-      for (simplice_maximal, p) in self.complejo_maximal_peso:
-        if res is None and all(elem in simplice_maximal for elem in simplice):
-          res = p
-        if all(elem in simplice_maximal for elem in simplice):
-          res = p if p < res else res
-      return res
-
     #Calcula los pesos de todos los simplices y lo devuelve en una lista de tuplas
     def calculaListaCompletaPesos(self):
         res = []
@@ -546,13 +598,6 @@ class Complejo_Simplicial():
         res.sort(key=lambda x: (x[1], len(x[0])))
         return res
     
-    #Devuelve el orden en el que aparecen los simplices en una filtracion
-    def ordenFiltracion(self):
-        res = []
-        for (simplice, p) in self.calculaListaCompletaPesos():
-            res.append(simplice)
-        return res
-
     #Devuelve la lista ordenada de todos los pesos que hay en el complejo simplicial
     def PesosOrdenados(self):
         self.complejo_maximal_peso.sort(key=lambda x: (x[1], len(x[0])))
@@ -564,6 +609,7 @@ class Complejo_Simplicial():
                 res.append(p)
         return res
     
+
     #----------------------------------------------------------------------------------------------------------------------
     # AMPLIACION DE REPRESENTACION
     #----------------------------------------------------------------------------------------------------------------------
@@ -582,7 +628,7 @@ class Complejo_Simplicial():
             ax.set_title('Triangulacion')
 
         num_frames = len(self.PesosOrdenados())
-        ani = FuncAnimation(fig, update, frames=num_frames, interval=20)
+        ani = FuncAnimation(fig, update, frames=num_frames, interval=int(len(self.caras())/10))
 
         if mostrar:
             plt.show()
@@ -593,8 +639,8 @@ class Complejo_Simplicial():
     def analiza(self):
         fig, axes = plt.subplots(2, 2)
 
-
-        axes[0, 0].scatter(self.points[:,0], self.points[:,1], color='black', marker='o')
+        self.representaPuntos(ax=axes[0, 0])
+        axes[0, 0].set_title('Puntos')
 
         ani = self.animaComplejo(fig, axes[0, 1])
 
@@ -612,18 +658,25 @@ class Complejo_Simplicial():
 #PRACTICA 2 (parte 1)
 #----------------------------------------------------------------------------------------------------------------------
 
-#CLASE ALFA COMPLEJO
+#CLASE ALFA COMPLEJO, es clase hija de 'Complejo_Simplicial'
 class AlphaComplex(Complejo_Simplicial):
-    #Constructor, se le deben pasar las coordenadas de los puntos en la forma lista de tuplas (o lista) con dos elementos correspondientes a los valores x e y del punto
+    #Coordenadas de los puntos
+    points = None
+
+    #Constructor, se le deben pasar las coordenadas de los puntos como se pide hace en los ejemplos de clase
     def __init__(self, coord):
         self.points = coord
         Del = Delaunay(coord)
+        #Fuerzo la conversion a lista de listas con enteros (tipos nativos de python, no de numpy)
         simplices_maximales = [list(elem) for elem in Del.simplices]
         simplices_maximales = [[int(x) for x in sublist] for sublist in simplices_maximales]
+        ordena(simplices_maximales)
 
+        #Primero se inicializa el complejo vacío, luego se irán añadiendo los simplice a medida que se calculo su peso
         super().__init__([])
-        sc_aux = Complejo_Simplicial(simplices_maximales)
 
+        #Variable auxiliar para conseguir los simplice del complejo simplicial
+        sc_aux = Complejo_Simplicial(simplices_maximales)
 
         self.anadirPesosVertices(sc_aux.carasN(0))
         self.anadirPesosTriangulos(coord, sc_aux.carasN(2))
@@ -660,6 +713,14 @@ class AlphaComplex(Complejo_Simplicial):
                 if not ptoDentroCirc:
                     self.anadirSimplice(arista, radio)
 
+    #Se entra en detalle de la generalización de la clase padre
+    #ax sirve para representarlo en una cierta ventana de matplotlib así se desea
+    def representaSubnivel(self, peso, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots()
+        voronoi_plot_2d(Voronoi(self.points),ax=ax, show_vertices=False,line_width=2, line_colors='blue' )
+        super().representaSubnivel(peso, ax=ax)
+
 
 #----------------------------------------------------------------------------------------------------------------------
 #PRACTICA 2 (parte 3)
@@ -669,26 +730,27 @@ class VietorisRips(Complejo_Simplicial):
     #Constructor 
     def __init__(self, coord):
         self.points = coord
-        print()
 
         super().__init__([])
         sc_aux = Complejo_Simplicial([list(range(len(coord)))])
 
+        #Añado peso de vertice
         for vertice in sc_aux.carasN(0):
             self.anadirSimplice(vertice, 0)
 
+        #Añado peso aristas
         for arista in sc_aux.carasN(1):
             p1 = coord[arista[0]]
             p2 = coord[arista[1]]
             self.anadirSimplice(arista, math.dist(p1, p2)*0.5)
 
-        for triangulo in sc_aux.carasN(2):
-            pesoAris1=self.calculaPesoSimplice([triangulo[0], triangulo[1]])
-            pesoAris2=self.calculaPesoSimplice([triangulo[0], triangulo[2]])
-            pesoAris3=self.calculaPesoSimplice([triangulo[1], triangulo[2]])
-            self.anadirSimplice(triangulo, max(pesoAris1, pesoAris2, pesoAris3))
+        #Añado peso del resto de simplices
+        for i in range(2, sc_aux.dimension()+1):
+            for i_simplice in sc_aux.carasN(i):
+                combinacion = [list(comb) for comb in combinations(i_simplice, i)]
+                pesos = [self.calculaPesoSimplice(cara) for cara in combinacion]
+                self.anadirSimplice(i_simplice, max(pesos))
 
-        print(self.complejo_maximal_peso)
 
         
 

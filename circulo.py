@@ -13,11 +13,10 @@ def generate_points(num_points, radio=1, max_error=0.25):
     x = noisy_radii * np.cos(angles)
     y = noisy_radii * np.sin(angles)
 
-    return np.array([[x[i], y[i]] for i in range(num_points)])
+    return np.array(list(zip(x, y)))
 
-# Generar 100 puntos cercanos a un círculo de radio 1 con un error máximo de 0.3
-num_points = 100
+num_points = 50
 points = generate_points(num_points)
 
 alpha = AlphaComplex(points)
-alpha.analiza()
+ani = alpha.analiza()
