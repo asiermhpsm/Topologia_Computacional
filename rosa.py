@@ -2,7 +2,7 @@ from Topologia_comp import *
 import numpy as np
 
 def generate_points(num_points, petalos=6,  radio=5, max_error=0.3):
-    if petalos%2 != 0:
+    if petalos < 0 or petalos%2 != 0:
         raise ValueError("El numero de petalos debe ser un numero estrictamente positivo y par")
     # Generar ángulos aleatorios
     true_angles = np.linspace(0, 2 * np.pi, num_points)
@@ -19,5 +19,5 @@ def generate_points(num_points, petalos=6,  radio=5, max_error=0.3):
     return np.array(list(zip(x, y)))
 
 
-alpha = AlphaComplex(generate_points(100, petalos=4, max_error=0.3))
+alpha = AlphaComplex(generate_points(100, petalos=6, max_error=0.3))
 alpha.analiza()

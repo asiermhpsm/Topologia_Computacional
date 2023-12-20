@@ -457,9 +457,6 @@ class Complejo_Simplicial():
                 else:
                     beta1 = beta1 - 1
                 N_iMenos1 = N_i
-            #print("Complejo: ", N_iMenos1.complejo_maximal_peso)
-            #print("Componentes conexas: ", N_iMenos1.comp_conex())
-            #print(beta0, beta1, "\n")
         return beta0, beta1
 
 
@@ -628,7 +625,7 @@ class Complejo_Simplicial():
             ax.set_title('Triangulacion')
 
         num_frames = len(self.PesosOrdenados())
-        ani = FuncAnimation(fig, update, frames=num_frames, interval=int(len(self.caras())/10))
+        ani = FuncAnimation(fig, update, frames=num_frames, interval=0.1)
 
         if mostrar:
             plt.show()
