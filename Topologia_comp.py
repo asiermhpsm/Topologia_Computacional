@@ -672,7 +672,7 @@ class AlphaComplex(Complejo_Simplicial):
         #Primero se inicializa el complejo vacío, luego se irán añadiendo los simplice a medida que se calculo su peso
         super().__init__([])
 
-        #Variable auxiliar para conseguir los simplice del complejo simplicial
+        #Variable auxiliar para conseguir los simplices del complejo simplicial
         sc_aux = Complejo_Simplicial(simplices_maximales)
 
         self.anadirPesosVertices(sc_aux.carasN(0))
@@ -731,7 +731,7 @@ class VietorisRips(Complejo_Simplicial):
         super().__init__([])
         sc_aux = Complejo_Simplicial([list(range(len(coord)))])
 
-        #Añado peso de vertice
+        #Añado peso de vertices
         for vertice in sc_aux.carasN(0):
             self.anadirSimplice(vertice, 0)
 
