@@ -30,5 +30,7 @@ complejo, el diagrama de persistenca y el código de barras.
 
 Los archivos circulo.py, circulos.py, rosa.py y aleatorios.py son ejemplos del funcionamiento del código en
 los que se generan puntos aleatorios con distintas formas y se llama a la funcion analiza(). Los archivos 
-.ipynb contienen todos los ejemplos subidos en el moodle. En Practica4.ipynb se compara los resultados usando
+.ipynb contienen todos los ejemplos subidos en el moodle. El archivo Practica4.ipynb tiene varios cuadros de código 
+sin ejecutar (los que generan muchas imágenes) para reducir el tamaño del archivo y así poder subirlo al moodle. Si se 
+ejecuta todo (suele haber un botón) debería dar los resultados deseado. En Practica4.ipynb se compara los resultados usando
 alpha-complejos vs Vietoris-Rips (no se recomienda volver a ejecutar, puede tardar bastante).
